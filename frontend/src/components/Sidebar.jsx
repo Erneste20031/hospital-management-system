@@ -4,38 +4,31 @@ import { AuthContext } from '../context/AuthContext';
 
 const menuItems = {
   admin: [
-    { icon: '📊', label: 'Dashboard',    path: '/dashboard' },
-    { icon: '👨‍⚕️', label: 'Doctors',      path: '/doctors' },
-    { icon: '👥', label: 'Patients',     path: '/patients' },
-    { icon: '🏥', label: 'Departments',  path: '/departments' },
-    { icon: '📅', label: 'Appointments', path: '/appointments' },
-    { icon: '📈', label: 'Reports',      path: '/reports' },
+    { icon: 'ti-layout-dashboard', label: 'Dashboard',    path: '/dashboard' },
+    { icon: 'ti-stethoscope',      label: 'Doctors',      path: '/doctors' },
+    { icon: 'ti-users',            label: 'Patients',     path: '/patients' },
+    { icon: 'ti-building',         label: 'Departments',  path: '/departments' },
+    { icon: 'ti-calendar',         label: 'Appointments', path: '/appointments' },
+    { icon: 'ti-chart-bar',        label: 'Reports',      path: '/reports' },
   ],
   receptionist: [
-    { icon: '📊', label: 'Dashboard',        path: '/dashboard' },
-    { icon: '👤', label: 'Register Patient', path: '/register-patient' },
-    { icon: '💰', label: 'Payments',         path: '/payments' },
-    { icon: '📅', label: 'Appointments',     path: '/appointments' },
+    { icon: 'ti-layout-dashboard', label: 'Dashboard',        path: '/dashboard' },
+    { icon: 'ti-user-plus',        label: 'Register Patient', path: '/register-patient' },
+    { icon: 'ti-credit-card',      label: 'Payments',         path: '/payments' },
+    { icon: 'ti-calendar',         label: 'Appointments',     path: '/appointments' },
   ],
   doctor: [
-    { icon: '📊', label: 'Dashboard',       path: '/dashboard' },
-    { icon: '📅', label: 'Appointments',    path: '/doctor/appointments' },
-    { icon: '📋', label: 'Medical Records', path: '/medical-records' },
-    { icon: '💊', label: 'Prescriptions',   path: '/prescriptions' },
+    { icon: 'ti-layout-dashboard', label: 'Dashboard',       path: '/dashboard' },
+    { icon: 'ti-calendar',         label: 'Appointments',    path: '/doctor/appointments' },
+    { icon: 'ti-clipboard-list',   label: 'Medical Records', path: '/medical-records' },
+    { icon: 'ti-pill',             label: 'Prescriptions',   path: '/prescriptions' },
   ],
   patient: [
-    { icon: '📊', label: 'Dashboard',        path: '/dashboard' },
-    { icon: '📅', label: 'Book Appointment', path: '/book-appointment' },
-    { icon: '📖', label: 'Medical History',  path: '/medical-history' },
-    { icon: '💰', label: 'My Bills',         path: '/my-bills' },
+    { icon: 'ti-layout-dashboard', label: 'Dashboard',        path: '/dashboard' },
+    { icon: 'ti-calendar-plus',    label: 'Book Appointment', path: '/book-appointment' },
+    { icon: 'ti-book',             label: 'Medical History',  path: '/medical-history' },
+    { icon: 'ti-receipt',          label: 'My Bills',         path: '/my-bills' },
   ],
-};
-
-const roleColors = {
-  admin:        { bg: 'rgba(61,77,183,0.12)',  color: '#3D4DB7' },
-  receptionist: { bg: 'rgba(245,166,35,0.15)', color: '#E09000' },
-  doctor:       { bg: 'rgba(61,77,183,0.12)',  color: '#3D4DB7' },
-  patient:      { bg: 'rgba(245,166,35,0.15)', color: '#E09000' },
 };
 
 const Sidebar = ({ collapsed = false, onToggle = () => {} }) => {
@@ -44,164 +37,170 @@ const Sidebar = ({ collapsed = false, onToggle = () => {} }) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const items = menuItems[user?.role] || menuItems.admin;
-  const roleStyle = roleColors[user?.role] || roleColors.admin;
 
-  // Handle mobile responsiveness
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  // On mobile, collapse sidebar by default
+  const handleLogout = () => { logout(); navigate('/login'); };
   const isCollapsed = isMobile ? true : collapsed;
+
+  const sidebarStyles = {
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    height: '100vh',
+    width: isCollapsed ? '68px' : '260px',
+    background: 'var(--color-background-primary, #fff)',
+    borderRight: '0.5px solid var(--color-border-tertiary, #e5e7eb)',
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'width 0.28s cubic-bezier(0.4,0,0.2,1)',
+    zIndex: 40,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    paddingTop: isMobile ? '72px' : '14px',
+    paddingBottom: '16px',
+    gap: '2px',
+  };
 
   return (
     <>
-      {/* Mobile overlay — click to close sidebar */}
+      <style>{`
+        .sb-link {
+          display: flex;
+          align-items: center;
+          gap: ${isCollapsed ? '0' : '10px'};
+          padding: ${isCollapsed ? '11px' : '10px 12px'};
+          margin: 0 6px;
+          border-radius: 10px;
+          font-size: 13.5px;
+          font-weight: 400;
+          color: var(--color-text-secondary, #6b7280);
+          text-decoration: none;
+          transition: all 0.15s ease;
+          justify-content: ${isCollapsed ? 'center' : 'flex-start'};
+          white-space: nowrap;
+          overflow: hidden;
+        }
+        .sb-link:hover {
+          background: var(--color-background-secondary, #f3f4f6);
+          color: var(--color-text-primary, #111);
+        }
+        .sb-link.active {
+          background: #E6F1FB;
+          color: #0C447C;
+          font-weight: 500;
+        }
+        .sb-link.active i { color: #185FA5; }
+        .sb-link i { font-size: 18px; flex-shrink: 0; }
+        .sb-btn {
+          display: flex;
+          align-items: center;
+          gap: ${isCollapsed ? '0' : '10px'};
+          padding: ${isCollapsed ? '11px' : '10px 12px'};
+          margin: 0 6px;
+          border-radius: 10px;
+          font-size: 13.5px;
+          font-weight: 400;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+          width: calc(100% - 12px);
+          transition: all 0.15s ease;
+          justify-content: ${isCollapsed ? 'center' : 'flex-start'};
+        }
+        .sb-btn i { font-size: 18px; flex-shrink: 0; }
+        .sb-btn:hover { background: var(--color-background-secondary, #f3f4f6); }
+        .sb-toggle {
+          position: absolute;
+          top: 18px;
+          right: -11px;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: var(--color-background-primary, #fff);
+          border: 0.5px solid var(--color-border-secondary, #d1d5db);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 50;
+          color: var(--color-text-secondary);
+          font-size: 13px;
+          transition: all 0.15s;
+        }
+        .sb-toggle:hover {
+          background: #1e3a8a;
+          color: #fff;
+          border-color: #1e3a8a;
+        }
+        .sb-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.35);
+          z-index: 39;
+          animation: sbFade 0.2s ease;
+        }
+        @keyframes sbFade { from{opacity:0} to{opacity:1} }
+        aside::-webkit-scrollbar { width: 4px; }
+        aside::-webkit-scrollbar-track { background: transparent; }
+        aside::-webkit-scrollbar-thumb { background: var(--color-border-secondary, #d1d5db); border-radius: 4px; }
+      `}</style>
+
       {isMobile && !isCollapsed && (
-        <div
-          onClick={() => onToggle()}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            zIndex: 39,
-            animation: 'fadeIn 0.2s ease',
-          }}
-        />
+        <div className="sb-overlay" onClick={onToggle} />
       )}
 
-      {/* Sidebar container */}
-      <aside
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          height: '100vh',
-          width: isCollapsed ? '72px' : '280px',
-          background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-          borderRight: '1px solid var(--gray-200)',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
-          zIndex: 40,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          paddingTop: isMobile ? '76px' : '16px',
-          paddingBottom: '16px',
-        }}
-      >
+      <aside style={sidebarStyles}>
 
-        {/* Toggle button — visible on desktop when not collapsed */}
+        {/* Desktop collapse toggle */}
         {!isMobile && (
-          <button
-            onClick={() => onToggle()}
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '-12px',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              background: 'white',
-              border: '1px solid var(--gray-200)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 50,
-              transition: 'all 0.2s ease',
-              fontSize: '12px',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--blue)';
-              e.currentTarget.style.color = 'white';
-              e.currentTarget.style.borderColor = 'var(--blue)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#1f2937';
-              e.currentTarget.style.borderColor = 'var(--gray-200)';
-            }}
-            title={isCollapsed ? 'Expand' : 'Collapse'}
-          >
-            {isCollapsed ? '→' : '←'}
+          <button className="sb-toggle" onClick={onToggle} title={isCollapsed ? 'Expand' : 'Collapse'}>
+            <i className={`ti ${isCollapsed ? 'ti-chevron-right' : 'ti-chevron-left'}`} aria-hidden="true" />
           </button>
         )}
 
-        {/* User profile card at top */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: isCollapsed ? '0' : '12px',
-            padding: isCollapsed ? '8px' : '14px 16px',
-            marginBottom: '12px',
-            marginX: isCollapsed ? '4px' : '0',
-            background: 'var(--blue-muted)',
-            borderRadius: '14px',
-            transition: 'padding 0.3s ease, gap 0.3s ease',
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-            minHeight: '60px',
-          }}
-        >
-          <div
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--blue) 0%, #2E3A9A 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '18px',
-              color: 'white',
-              fontWeight: '700',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(61,77,183,0.25)',
-            }}
-            title={user?.name}
-          >
+        {/* User card */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isCollapsed ? 0 : '10px',
+          padding: isCollapsed ? '10px 6px' : '12px',
+          margin: '0 6px 6px',
+          background: 'var(--color-background-secondary, #f9fafb)',
+          borderRadius: '12px',
+          justifyContent: isCollapsed ? 'center' : 'flex-start',
+          transition: 'all 0.28s ease',
+        }}>
+          <div style={{
+            width: '38px', height: '38px', borderRadius: '50%',
+            background: '#1e3a8a', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: '#fff', fontSize: '15px',
+            fontWeight: '500', flexShrink: 0,
+          }}>
             {user?.name?.[0]?.toUpperCase() || '?'}
           </div>
-
           {!isCollapsed && (
             <div style={{ overflow: 'hidden', minWidth: 0 }}>
-              <p
-                style={{
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  color: 'var(--gray-900)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  margin: 0,
-                }}
-              >
+              <p style={{
+                fontSize: '13px', fontWeight: '500',
+                color: 'var(--color-text-primary, #111)',
+                whiteSpace: 'nowrap', overflow: 'hidden',
+                textOverflow: 'ellipsis', margin: 0,
+              }}>
                 {user?.name || 'User'}
               </p>
-              <span
-                style={{
-                  display: 'inline-block',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  padding: '2px 8px',
-                  borderRadius: '20px',
-                  background: roleStyle.bg,
-                  color: roleStyle.color,
-                  textTransform: 'capitalize',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginTop: '4px',
-                }}
-              >
+              <span style={{
+                fontSize: '11px', fontWeight: '400',
+                color: '#0C447C', background: '#E6F1FB',
+                padding: '2px 8px', borderRadius: '20px',
+                display: 'inline-block', marginTop: '3px',
+                textTransform: 'capitalize',
+              }}>
                 {user?.role || 'guest'}
               </span>
             </div>
@@ -210,273 +209,96 @@ const Sidebar = ({ collapsed = false, onToggle = () => {} }) => {
 
         {/* Section label */}
         {!isCollapsed && (
-          <p
-            style={{
-              fontSize: '11px',
-              fontWeight: '700',
-              color: 'var(--gray-500)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              padding: '0 16px',
-              marginBottom: '10px',
-              marginTop: '8px',
-            }}
-          >
-            Main Menu
+          <p style={{
+            fontSize: '11px', fontWeight: '500',
+            color: 'var(--color-text-tertiary, #9ca3af)',
+            textTransform: 'uppercase', letterSpacing: '0.6px',
+            padding: '4px 18px 6px', margin: 0,
+          }}>
+            Main menu
           </p>
         )}
 
         {/* Nav links */}
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', paddingX: isCollapsed ? '4px' : '0' }}>
-          {items.map((item, index) => (
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {items.map((item) => (
             <NavLink
-              key={index}
+              key={item.path}
               to={item.path}
-              style={({ isActive }) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: isCollapsed ? '0' : '12px',
-                padding: isCollapsed ? '8px' : '10px 14px',
-                margin: isCollapsed ? '0 4px' : '0 8px',
-                borderRadius: '12px',
-                fontSize: isCollapsed ? '18px' : '14px',
-                fontWeight: isActive ? '700' : '600',
-                color: isActive ? 'white' : 'var(--gray-700)',
-                background: isActive
-                  ? 'linear-gradient(135deg, var(--blue) 0%, #2E3A9A 100%)'
-                  : 'transparent',
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                transition: 'all 0.2s ease',
-                cursor: 'pointer',
-                boxShadow: isActive ? '0 4px 12px rgba(61,77,183,0.3)' : 'none',
-                justifyContent: isCollapsed ? 'center' : 'flex-start',
-              })}
-              title={item.label}
-              onMouseEnter={e => {
-                if (!e.currentTarget.className.includes('active')) {
-                  e.currentTarget.style.background = 'rgba(61,77,183,0.08)';
-                  e.currentTarget.style.color = 'var(--blue)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!e.currentTarget.className.includes('active')) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--gray-700)';
-                }
-              }}
+              className={({ isActive }) => `sb-link${isActive ? ' active' : ''}`}
+              title={isCollapsed ? item.label : undefined}
             >
-              <span style={{ fontSize: isCollapsed ? '18px' : '16px', lineHeight: 1, flexShrink: 0 }}>
-                {item.icon}
-              </span>
+              <i className={`ti ${item.icon}`} aria-hidden="true" />
               {!isCollapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
 
         {/* Divider */}
-        <div
-          style={{
-            height: '1px',
-            background: 'var(--gray-200)',
-            margin: isCollapsed ? '8px 4px' : '12px 8px',
-            transition: 'margin 0.3s ease',
-          }}
-        />
+        <div style={{ height: '0.5px', background: 'var(--color-border-tertiary, #e5e7eb)', margin: '8px 10px' }} />
 
-        {/* Emergency quick-access */}
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #3D4DB7 0%, #2E3A9A 100%)',
-            borderRadius: '14px',
-            padding: isCollapsed ? '8px' : '14px',
-            margin: isCollapsed ? '0 4px' : '0 8px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: isCollapsed ? 'center' : 'stretch',
-            transition: 'padding 0.3s ease',
-            minHeight: isCollapsed ? '50px' : 'auto',
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-          }}
-        >
+        {/* Emergency card */}
+        <div style={{
+          background: '#1e3a8a', borderRadius: '12px',
+          padding: isCollapsed ? '10px 6px' : '12px 14px',
+          margin: '0 6px', display: 'flex', flexDirection: 'column',
+          alignItems: isCollapsed ? 'center' : 'stretch',
+          transition: 'padding 0.28s ease',
+        }}>
           {!isCollapsed && (
             <>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '10px', fontWeight: '700', marginBottom: '4px', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>
-                Emergency
-              </p>
-              <p
-                style={{
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  marginBottom: '10px',
-                  margin: '6px 0 10px 0',
-                }}
-              >
-                🚨 24/7 Hotline
-              </p>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '10px', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' }}>Emergency</p>
+              <p style={{ color: '#fff', fontSize: '12px', fontWeight: '500', margin: '0 0 10px' }}>24/7 Hotline</p>
             </>
           )}
-          <a
+          
             href="tel:+250791169631"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
-              background: 'var(--orange)',
-              color: 'white',
-              borderRadius: isCollapsed ? '50%' : '30px',
-              padding: isCollapsed ? '8px' : '8px 12px',
-              width: isCollapsed ? '36px' : 'auto',
-              height: isCollapsed ? '36px' : 'auto',
-              fontSize: '12px',
-              fontWeight: '700',
-              textDecoration: 'none',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(245,166,35,0.3)',
-              textAlign: 'center',
-            }}
             title="Emergency Hotline"
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--orange-dark)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(245,166,35,0.4)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'var(--orange)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(245,166,35,0.3)';
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '6px', background: '#f5a623', color: '#fff',
+              borderRadius: isCollapsed ? '50%' : '30px',
+              padding: isCollapsed ? '0' : '8px 12px',
+              width: isCollapsed ? '38px' : 'auto',
+              height: isCollapsed ? '38px' : 'auto',
+              fontSize: '12px', fontWeight: '500', textDecoration: 'none',
+              transition: 'all 0.2s ease',
             }}
           >
-            {isCollapsed ? '🚨' : '📞 +250 791 169 631'}
+            <i className="ti ti-phone" style={{ fontSize: '14px' }} aria-hidden="true" />
+            {!isCollapsed && '+250 791 169 631'}
           </a>
         </div>
 
-        {/* Bottom settings/logout section */}
-        {!isCollapsed && (
-          <>
-            <div style={{ height: '1px', background: 'var(--gray-200)', margin: '12px 8px' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingX: '8px' }}>
-              <button
-                onClick={() => navigate('/settings')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  margin: '0 8px',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'var(--gray-700)',
-                  background: 'transparent',
-                  border: 'none',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(61,77,183,0.08)';
-                  e.currentTarget.style.color = 'var(--blue)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--gray-700)';
-                }}
-              >
-                <span style={{ fontSize: '16px' }}>⚙️</span>
-                <span>Settings</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  margin: '0 8px',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: '#dc2626',
-                  background: 'rgba(220,38,38,0.08)',
-                  border: 'none',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(220,38,38,0.15)';
-                  e.currentTarget.style.color = '#991b1b';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(220,38,38,0.08)';
-                  e.currentTarget.style.color = '#dc2626';
-                }}
-              >
-                <span style={{ fontSize: '16px' }}>🚪</span>
-                <span>Logout</span>
-              </button>
-            </div>
-          </>
-        )}
+        {/* Divider */}
+        <div style={{ height: '0.5px', background: 'var(--color-border-tertiary, #e5e7eb)', margin: '8px 10px' }} />
 
-        {/* Collapsed state logout icon */}
-        {isCollapsed && (
-          <button
-            onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '8px',
-              margin: '0 4px',
-              borderRadius: '12px',
-              fontSize: '16px',
-              background: 'rgba(220,38,38,0.08)',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            title="Logout"
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(220,38,38,0.15)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(220,38,38,0.08)';
-            }}
-          >
-            🚪
-          </button>
-        )}
+        {/* Settings */}
+        <button
+          className="sb-btn"
+          onClick={() => navigate('/settings')}
+          title={isCollapsed ? 'Settings' : undefined}
+          style={{ color: 'var(--color-text-secondary, #6b7280)' }}
+        >
+          <i className="ti ti-settings" aria-hidden="true" />
+          {!isCollapsed && 'Settings'}
+        </button>
+
+        {/* Logout */}
+        <button
+          className="sb-btn"
+          onClick={handleLogout}
+          title={isCollapsed ? 'Logout' : undefined}
+          style={{
+            color: 'var(--color-text-danger, #dc2626)',
+            background: 'rgba(220,38,38,0.07)',
+          }}
+        >
+          <i className="ti ti-logout" aria-hidden="true" />
+          {!isCollapsed && 'Logout'}
+        </button>
 
       </aside>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        aside::-webkit-scrollbar {
-          width: 6px;
-        }
-
-        aside::-webkit-scrollbar-track {
-          background: transparent;
-        }
-
-        aside::-webkit-scrollbar-thumb {
-          background: var(--gray-300);
-          border-radius: 3px;
-        }
-
-        aside::-webkit-scrollbar-thumb:hover {
-          background: var(--gray-400);
-        }
-      `}</style>
     </>
   );
 };
