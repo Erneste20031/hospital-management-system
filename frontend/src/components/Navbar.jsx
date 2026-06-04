@@ -260,15 +260,13 @@ const Navbar = ({ scrolled = false }) => {
         .drawer-logout:hover { background: rgba(220,38,38,0.25); color: white; }
 
         /* ── Responsive ── */
-        @media (max-width: 768px) {
-          .nav-links                         { display: none !important; }
-          .nav-right .nav-avatar,
-          .nav-right .nav-user-name,
-          .nav-right .nav-user-role,
-          .nav-right div,
-          .nav-logout                        { display: none !important; }
-          .nav-hamburger                     { display: flex !important; }
-        }
+    @media (max-width: 768px) {
+  .nav-links            { display: none !important; }
+  .nav-avatar           { display: none !important; }
+  .nav-user-info        { display: none !important; }
+  .nav-logout           { display: none !important; }
+  .nav-hamburger        { display: flex !important; }
+}
         @media (min-width: 769px) {
           .nav-hamburger { display: none !important; }
           .drawer-overlay,
