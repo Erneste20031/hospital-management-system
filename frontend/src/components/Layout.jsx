@@ -5,224 +5,126 @@ import Footer from './Footer';
 import { AuthContext } from '../context/AuthContext';
 import API from '../services/api';
 
-// ── Hero content per role ─────────────────────────────────────────────────────
-
 const heroContent = {
-  admin: {
-    title: 'Admin', highlight: 'Dashboard',
-    subtitle: 'Manage your hospital operations from one place.',
-  },
-  doctor: {
-    title: 'Doctor', highlight: 'Portal',
-    subtitle: 'View your appointments, records and prescriptions.',
-  },
-  patient: {
-    title: 'Your', highlight: 'Health Hub',
-    subtitle: 'Book appointments and track your medical history.',
-  },
-  receptionist: {
-    title: 'Welcome,', highlight: '',
-    subtitle: 'Manage patient registrations and payments efficiently.',
-  },
+  admin:        { title: 'Admin',    highlight: 'Dashboard',  subtitle: 'Manage your hospital operations from one place.' },
+  doctor:       { title: 'Doctor',   highlight: 'Portal',     subtitle: 'View your appointments, records and prescriptions.' },
+  patient:      { title: 'Your',     highlight: 'Health Hub', subtitle: 'Book appointments and track your medical history.' },
+  receptionist: { title: 'Welcome,', highlight: '',           subtitle: 'Manage patient registrations and payments efficiently.' },
 };
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const HERO_FULL       = 300;
-const HERO_COLLAPSED  = 76;
 const SCROLL_THRESHOLD = 60;
 const TRANSITION = '0.28s cubic-bezier(0.4,0,0.2,1)';
-
-// ── Layout ────────────────────────────────────────────────────────────────────
 
 const Layout = () => {
   const { user } = useContext(AuthContext);
   const location = useLocation();
-  const [scrolled, setScrolled] = useState(false);
-  const [stats, setStats] = useState({
-    totalPatients: 0,
-    totalDoctors: 0,
-    todayAppointments: 0,
-    pendingBills: 0,
-    revenue: 0
-  });
-  const [doctorStats, setDoctorStats] = useState({
-    todayAppointments: 0,
-    myPatients: 0,
-    pendingRecords: 0,
-    prescriptions: 0
-  });
-  const [patientStats, setPatientStats] = useState({
-    upcomingAppointments: 0,
-    medicalRecords: 0,
-    activePrescriptions: 0,
-    unpaidBills: 0
-  });
-  const [receptionistStats, setReceptionistStats] = useState({
-    registeredToday: 0,
-    appointmentsToday: 0,
-    paymentsPending: 0,
-    roomsAvailable: 3
-  });
-  const [loading, setLoading] = useState(true);
+  const [scrolled, setScrolled]   = useState(false);
+  const [loading,  setLoading]    = useState(true);
+  const [stats,    setStats]      = useState({ totalPatients:0, totalDoctors:0, todayAppointments:0, pendingBills:0 });
+  const [doctorStats,      setDoctorStats]      = useState({ todayAppointments:0, myPatients:0, pendingRecords:0, prescriptions:0 });
+  const [patientStats,     setPatientStats]     = useState({ upcomingAppointments:0, medicalRecords:0, activePrescriptions:0, unpaidBills:0 });
+  const [receptionistStats,setReceptionistStats]= useState({ registeredToday:0, appointmentsToday:0, paymentsPending:0, roomsAvailable:3 });
 
   const scrolledRef = useRef(false);
-  const rafRef = useRef(null);
+  const rafRef      = useRef(null);
 
-  useEffect(() => {
-    fetchDashboardStats();
-  }, [user]);
+  useEffect(() => { fetchDashboardStats(); }, [user]);
 
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
-      
       if (user?.role === 'admin') {
-        // Fetch admin stats
-        const statsRes = await API.get('/stats');
-        
-        // Fetch pending bills count
-        const billsRes = await API.get('/billing');
-        const pendingBills = billsRes.data?.filter(bill => bill.status === 'Unpaid').length || 0;
-        
+        const [statsRes, billsRes] = await Promise.all([API.get('/stats'), API.get('/billing')]);
         setStats({
-          totalPatients: statsRes.data.totalPatients || 0,
-          totalDoctors: statsRes.data.totalDoctors || 0,
-          todayAppointments: statsRes.data.todayAppointments || 0,
-          pendingBills: pendingBills,
-          revenue: statsRes.data.revenue || 0
+          totalPatients:      statsRes.data.totalPatients      || 0,
+          totalDoctors:       statsRes.data.totalDoctors       || 0,
+          todayAppointments:  statsRes.data.todayAppointments  || 0,
+          pendingBills:       billsRes.data?.filter(b => b.status === 'Unpaid').length || 0,
         });
-      } 
-      else if (user?.role === 'doctor') {
-        // Fetch doctor stats
-        const appointmentsRes = await API.get('/appointments');
-        const medicalRes = await API.get('/medical/records');
-        
+      } else if (user?.role === 'doctor') {
+        const [apptRes, medRes] = await Promise.all([API.get('/appointments'), API.get('/medical/records')]);
         const today = new Date().toISOString().split('T')[0];
-        const todayAppts = appointmentsRes.data?.filter(a => a.date === today).length || 0;
-        const myPatients = medicalRes.data?.length || 0;
-        const prescriptions = medicalRes.data?.filter(r => r.prescription).length || 0;
-        
         setDoctorStats({
-          todayAppointments: todayAppts,
-          myPatients: myPatients,
-          pendingRecords: medicalRes.data?.filter(r => r.status === 'Follow-up').length || 0,
-          prescriptions: prescriptions
+          todayAppointments: apptRes.data?.filter(a => a.date === today).length || 0,
+          myPatients:        medRes.data?.length || 0,
+          pendingRecords:    medRes.data?.filter(r => r.status === 'Follow-up').length || 0,
+          prescriptions:     medRes.data?.filter(r => r.prescription).length || 0,
         });
-      }
-      else if (user?.role === 'patient') {
-        // Fetch patient stats
-        const appointmentsRes = await API.get('/appointments');
-        const medicalRes = await API.get('/medical/records');
-        const billsRes = await API.get('/billing/my-bills');
-        
+      } else if (user?.role === 'patient') {
+        const [apptRes, medRes, billRes] = await Promise.all([API.get('/appointments'), API.get('/medical/records'), API.get('/billing/my-bills')]);
         const today = new Date().toISOString().split('T')[0];
-        const upcoming = appointmentsRes.data?.filter(a => a.date >= today && a.status !== 'Cancelled').length || 0;
-        const medicalRecords = medicalRes.data?.length || 0;
-        const activePrescriptions = medicalRes.data?.filter(r => r.status === 'Active').length || 0;
-        const unpaidBills = billsRes.data?.filter(b => b.status === 'Unpaid').length || 0;
-        
         setPatientStats({
-          upcomingAppointments: upcoming,
-          medicalRecords: medicalRecords,
-          activePrescriptions: activePrescriptions,
-          unpaidBills: unpaidBills
+          upcomingAppointments: apptRes.data?.filter(a => a.date >= today && a.status !== 'Cancelled').length || 0,
+          medicalRecords:       medRes.data?.length || 0,
+          activePrescriptions:  medRes.data?.filter(r => r.status === 'Active').length || 0,
+          unpaidBills:          billRes.data?.filter(b => b.status === 'Unpaid').length || 0,
         });
-      }
-      else if (user?.role === 'receptionist') {
-        // Fetch receptionist stats
-        const appointmentsRes = await API.get('/appointments');
-        const patientsRes = await API.get('/patients');
-        const billsRes = await API.get('/billing');
-        
+      } else if (user?.role === 'receptionist') {
+        const [apptRes, patRes, billRes] = await Promise.all([API.get('/appointments'), API.get('/patients'), API.get('/billing')]);
         const today = new Date().toISOString().split('T')[0];
-        const registeredToday = patientsRes.data?.filter(p => p.created_at?.split('T')[0] === today).length || 0;
-        const appointmentsToday = appointmentsRes.data?.filter(a => a.date === today).length || 0;
-        const pendingPayments = billsRes.data?.filter(b => b.status === 'Unpaid').length || 0;
-        
         setReceptionistStats({
-          registeredToday: registeredToday,
-          appointmentsToday: appointmentsToday,
-          paymentsPending: pendingPayments,
-          roomsAvailable: 3
+          registeredToday:   patRes.data?.filter(p => p.created_at?.split('T')[0] === today).length || 0,
+          appointmentsToday: apptRes.data?.filter(a => a.date === today).length || 0,
+          paymentsPending:   billRes.data?.filter(b => b.status === 'Unpaid').length || 0,
+          roomsAvailable:    3,
         });
       }
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+    } catch (err) {
+      console.error('Stats fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Get stats based on role
   const getHeroStats = () => {
-    if (user?.role === 'admin') {
-      return [
-        { icon: '👥', value: stats.totalPatients.toLocaleString(), label: 'Total Patients' },
-        { icon: '👨‍⚕️', value: stats.totalDoctors, label: 'Total Doctors' },
-        { icon: '📅', value: stats.todayAppointments, label: "Today's Appts" },
-        { icon: '💰', value: stats.pendingBills, label: 'Pending Bills' },
-      ];
-    } 
-    else if (user?.role === 'doctor') {
-      return [
-        { icon: '📅', value: doctorStats.todayAppointments, label: "Today's Appointments" },
-        { icon: '👥', value: doctorStats.myPatients, label: 'My Patients' },
-        { icon: '📋', value: doctorStats.pendingRecords, label: 'Pending Records' },
-        { icon: '💊', value: doctorStats.prescriptions, label: 'Prescriptions' },
-      ];
-    }
-    else if (user?.role === 'patient') {
-      return [
-        { icon: '📅', value: patientStats.upcomingAppointments, label: 'Upcoming Appointments' },
-        { icon: '📋', value: patientStats.medicalRecords, label: 'Medical Records' },
-        { icon: '💊', value: patientStats.activePrescriptions, label: 'Active Prescriptions' },
-        { icon: '💰', value: patientStats.unpaidBills, label: 'Unpaid Bills' },
-      ];
-    }
-    else if (user?.role === 'receptionist') {
-      return [
-        { icon: '👥', value: receptionistStats.registeredToday, label: 'Registered Today' },
-        { icon: '📅', value: receptionistStats.appointmentsToday, label: 'Appointments Today' },
-        { icon: '💰', value: receptionistStats.paymentsPending, label: 'Payments Pending' },
-        { icon: '🏥', value: receptionistStats.roomsAvailable, label: 'Rooms Available' },
-      ];
-    }
-    return [
-      { icon: '👥', value: '0', label: 'Total Patients' },
-      { icon: '👨‍⚕️', value: '0', label: 'Total Doctors' },
-      { icon: '📅', value: '0', label: "Today's Appts" },
-      { icon: '💰', value: '0', label: 'Pending Bills' },
+    if (user?.role === 'admin')        return [
+      { icon:'👥', value: stats.totalPatients.toLocaleString(), label:'Total Patients' },
+      { icon:'👨‍⚕️', value: stats.totalDoctors,                  label:'Total Doctors' },
+      { icon:'📅', value: stats.todayAppointments,              label:"Today's Appts" },
+      { icon:'💰', value: stats.pendingBills,                   label:'Pending Bills' },
     ];
+    if (user?.role === 'doctor')       return [
+      { icon:'📅', value: doctorStats.todayAppointments, label:"Today's Appts" },
+      { icon:'👥', value: doctorStats.myPatients,        label:'My Patients' },
+      { icon:'📋', value: doctorStats.pendingRecords,    label:'Pending Records' },
+      { icon:'💊', value: doctorStats.prescriptions,     label:'Prescriptions' },
+    ];
+    if (user?.role === 'patient')      return [
+      { icon:'📅', value: patientStats.upcomingAppointments, label:'Upcoming' },
+      { icon:'📋', value: patientStats.medicalRecords,       label:'Records' },
+      { icon:'💊', value: patientStats.activePrescriptions,  label:'Prescriptions' },
+      { icon:'💰', value: patientStats.unpaidBills,          label:'Unpaid Bills' },
+    ];
+    if (user?.role === 'receptionist') return [
+      { icon:'👥', value: receptionistStats.registeredToday,   label:'Registered Today' },
+      { icon:'📅', value: receptionistStats.appointmentsToday, label:'Appts Today' },
+      { icon:'💰', value: receptionistStats.paymentsPending,   label:'Pending Pay' },
+      { icon:'🏥', value: receptionistStats.roomsAvailable,    label:'Rooms Free' },
+    ];
+    return [];
   };
 
   const heroStats = getHeroStats();
-  const hero = heroContent[user?.role] || heroContent.admin;
-  const heroHeight = scrolled ? HERO_COLLAPSED : HERO_FULL;
+  const hero      = heroContent[user?.role] || heroContent.admin;
 
-  // Optimized scroll listener with RAF — smooth, no jank
+  // Hero heights — smaller on mobile
+  const HERO_FULL      = typeof window !== 'undefined' && window.innerWidth < 480 ? 220 : 280;
+  const HERO_COLLAPSED = 64;
+  const heroHeight     = scrolled ? HERO_COLLAPSED : HERO_FULL;
+
   useEffect(() => {
     const onScroll = () => {
       if (rafRef.current) return;
-      
       rafRef.current = requestAnimationFrame(() => {
         const next = window.scrollY > SCROLL_THRESHOLD;
-        if (next !== scrolledRef.current) {
-          scrolledRef.current = next;
-          setScrolled(next);
-        }
+        if (next !== scrolledRef.current) { scrolledRef.current = next; setScrolled(next); }
         rafRef.current = null;
       });
     };
-    
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    return () => { window.removeEventListener('scroll', onScroll); if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, []);
 
-  // Reset on route change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
     scrolledRef.current = false;
@@ -230,119 +132,174 @@ const Layout = () => {
   }, [location.pathname]);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--gray-50)' }}>
+    <>
+      <style>{`
+        body { overflow-y: scroll; margin: 0; }
 
-      {/* Fixed hero */}
-      <div style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 50,
-        background: 'var(--blue)',
-        height: `${heroHeight}px`,
-        transition: `height ${TRANSITION}`,
-        overflow: 'hidden',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        willChange: 'height',
-        contain: 'layout style paint',
-      }}>
+        .layout-root {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          background: #f8fafc;
+        }
 
-        {/* Navbar — receives scrolled, owns no scroll listener */}
-        <Navbar scrolled={scrolled} />
+        /* ── Fixed hero banner ── */
+        .hero-banner {
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          z-index: 50;
+          background: #1e3a8a;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+          will-change: height;
+          transition: height ${TRANSITION};
+        }
 
-        {/* Hero body fades out as it collapses */}
-        <div style={{
-          opacity: scrolled ? 0 : 1,
-          transition: 'opacity 0.18s ease',
-          pointerEvents: scrolled ? 'none' : 'auto',
-        }}>
-          <div style={{
-            maxWidth: '1100px',
-            margin: '0 auto',
-            padding: '12px 20px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: '24px',
-            flexWrap: 'wrap',
-          }}>
+        /* ── Hero body ── */
+        .hero-body {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 10px 20px 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+          transition: opacity 0.18s ease;
+        }
+
+        .hero-title {
+          font-size: 28px;
+          font-weight: 700;
+          color: #fff;
+          margin: 0;
+          line-height: 1.2;
+        }
+        .hero-title span { color: #f5a623; }
+
+        .hero-subtitle {
+          color: rgba(255,255,255,0.72);
+          font-size: 13px;
+          margin: 5px 0 0;
+          line-height: 1.5;
+        }
+
+        /* ── Stat cards row ── */
+        .hero-stats {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          flex-shrink: 0;
+        }
+        .stat-card {
+          background: rgba(255,255,255,0.13);
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 14px;
+          padding: 10px 14px;
+          min-width: 80px;
+          text-align: center;
+        }
+        .stat-icon  { font-size: 16px; line-height: 1; }
+        .stat-value { color: #fff; font-weight: 700; font-size: 18px; line-height: 1.2; margin-top: 2px; }
+        .stat-label { color: rgba(255,255,255,0.65); font-size: 10px; margin-top: 2px; white-space: nowrap; }
+
+        /* ── Curve ── */
+        .hero-curve {
+          position: absolute; bottom: -1px; left: 0;
+          width: 100%; height: 60px; display: block;
+          pointer-events: none;
+        }
+
+        /* ── Main content ── */
+        .layout-main {
+          flex: 1;
+          padding: 24px 16px 56px;
+          max-width: 1100px;
+          width: 100%;
+          margin: 0 auto;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* ── Mobile: phones ≤ 480px ── */
+        @media (max-width: 480px) {
+          .hero-body      { padding: 8px 14px 0; gap: 10px; }
+          .hero-title     { font-size: 20px; }
+          .hero-subtitle  { font-size: 12px; }
+          .hero-stats     { gap: 6px; }
+          .stat-card      { padding: 8px 10px; min-width: 68px; border-radius: 10px; }
+          .stat-icon      { font-size: 14px; }
+          .stat-value     { font-size: 15px; }
+          .stat-label     { font-size: 9px; }
+          .layout-main    { padding: 16px 12px 48px; }
+        }
+
+        /* ── Tablet ── */
+        @media (min-width: 481px) and (max-width: 768px) {
+          .hero-title    { font-size: 24px; }
+          .layout-main   { padding: 20px 16px 52px; }
+        }
+      `}</style>
+
+      <div className="layout-root">
+
+        {/* ── Fixed hero ── */}
+        <div
+          className="hero-banner"
+          style={{ height: `${heroHeight}px` }}
+        >
+          {/* Navbar pill sits inside the hero */}
+          <Navbar scrolled={scrolled} />
+
+          {/* Hero body fades away on scroll */}
+          <div
+            className="hero-body"
+            style={{ opacity: scrolled ? 0 : 1, pointerEvents: scrolled ? 'none' : 'auto' }}
+          >
+            {/* Left — title + subtitle */}
             <div>
-              <h1 style={{ fontSize: '34px', fontWeight: '800', color: 'white', margin: 0, lineHeight: 1.2 }}>
+              <h1 className="hero-title">
                 {user?.role === 'receptionist' ? (
-                  <>{hero.title} <span style={{ color: 'var(--orange)' }}>{user?.name?.split(' ')[0] || 'User'} 👋</span></>
+                  <>{hero.title} <span>{user?.name?.split(' ')[0] || 'User'} 👋</span></>
                 ) : (
-                  <>{hero.title} <span style={{ color: 'var(--orange)' }}>{hero.highlight}</span></>
+                  <>{hero.title} <span>{hero.highlight}</span></>
                 )}
               </h1>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px', marginTop: '6px' }}>
-                {hero.subtitle}
-              </p>
+              <p className="hero-subtitle">{hero.subtitle}</p>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0 }}>
+            {/* Right — stat cards */}
+            <div className="hero-stats">
               {heroStats.map((s, i) => (
-                <div key={i} style={{
-                  background: 'rgba(255,255,255,0.12)',
-                  backdropFilter: 'blur(6px)',
-                  borderRadius: '16px',
-                  padding: '10px 16px',
-                  minWidth: '88px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  willChange: 'transform',
-                }}>
-                  <div style={{ fontSize: '18px' }}>{s.icon}</div>
-                  <div style={{ color: 'white', fontWeight: '800', fontSize: '16px', lineHeight: 1.2 }}>{loading ? '...' : s.value}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', marginTop: '2px' }}>{s.label}</div>
+                <div key={i} className="stat-card">
+                  <div className="stat-icon">{s.icon}</div>
+                  <div className="stat-value">{loading ? '–' : s.value}</div>
+                  <div className="stat-label">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Curve blending into page background */}
-          <svg viewBox="0 0 1440 80" style={{
-            position: 'absolute', bottom: -1, left: 0,
-            width: '100%', height: '70px', display: 'block',
-            pointerEvents: 'none',
-            willChange: 'opacity',
-          }} preserveAspectRatio="none">
+          {/* Smooth curve blend */}
+          <svg className="hero-curve" viewBox="0 0 1440 60" preserveAspectRatio="none">
             <path
-              d="M0,40 C240,90 480,0 720,45 C960,90 1200,20 1440,55 L1440,80 L0,80 Z"
-              fill="var(--gray-50)"
+              d="M0,30 C240,70 480,0 720,35 C960,70 1200,10 1440,40 L1440,60 L0,60 Z"
+              fill="#f8fafc"
             />
           </svg>
         </div>
+
+        {/* ── Spacer mirrors hero height ── */}
+        <div style={{ height: `${heroHeight}px`, flexShrink: 0, transition: `height ${TRANSITION}` }} />
+
+        {/* ── Page content ── */}
+        <main className="layout-main">
+          <Outlet />
+        </main>
+
+        <Footer />
       </div>
-
-      {/* Spacer — mirrors hero height so content sits below the fixed banner */}
-      <div style={{
-        height: `${heroHeight}px`,
-        flexShrink: 0,
-        transition: `height ${TRANSITION}`,
-        willChange: 'height',
-      }} />
-
-      {/* Page content */}
-      <main style={{
-        flex: 1,
-        padding: '28px 12px 56px',
-        maxWidth: '1100px',
-        width: '100%',
-        margin: '0 auto',
-        position: 'relative',
-        zIndex: 1,
-        contain: 'layout style',
-      }}>
-        <Outlet />
-      </main>
-
-      <Footer />
-
-      <style>{`
-        body {
-          overflow-y: scroll;
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
 
