@@ -305,10 +305,10 @@ const Navbar = ({ scrolled = false }) => {
                 <div className="nav-avatar">
                   {user.name?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <div className="nav-user-name">{user.name}</div>
-                  <span className="nav-user-role">{user.role}</span>
-                </div>
+               <div className="nav-user-info">
+  <div className="nav-user-name">{user.name}</div>
+  <span className="nav-user-role">{user.role}</span>
+</div>
               </div>
             )}
             <button className="nav-logout" onClick={handleLogout}>Logout</button>
